@@ -16,7 +16,7 @@ urlpatterns = [
     path("login/", gapiviews.LoginView.as_view(), name="login"),
     path("token/auth/", gapiviews.tokenAuth.as_view(), name="token-auth"),
     # path("packages/", gapiviews.Packages.as_view(), name="packages"),
-    path("user/helps/", gapiviews.AddHelp.as_view(), name="add_help"),
+    path("user/helps/", gapiviews.HelpView.as_view(), name="add_help"),
     # path("signup/create_profile/", gapiviews.CreateProfile.as_view(), name="create_profile"),
     path("user/profile/", gapiviews.ProfileView.as_view(), name="profile"),
     path("user/picture/", gapiviews.PictureView.as_view(), name="picture"),
@@ -30,6 +30,7 @@ urlpatterns = [
     path("user/security/two-factor/disable", gapiviews.UserTwoFactorDisableView().as_view(), name="disable_two_factor"),
     path("user/verify-phone/", gapiviews.VerifyPhone.as_view(), name="verify_phone"),
     path("user/change-password/request", gapiviews.RequestChangePasswordView.as_view(), name="request_change_password"),
+    path("user/confirm-email", gapiviews.ConfirmEmail.as_view(), name="confirm_email"),
 
 ]
 

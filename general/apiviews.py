@@ -186,7 +186,7 @@ class RequestChangePasswordView(APIView):
                 print(db_token)
                 security.last_token= make_password(db_token)
                 security.save()
-                data = {'status':'success'}
+                data = {'status':'success','6_digits':db_token}
                 
             except ObjectDoesNotExist:
                 security = Security.objects.create(user=user)
@@ -196,7 +196,7 @@ class RequestChangePasswordView(APIView):
                 security.last_token= make_password(db_token)
                 security.save()
                 security_serializer_class = SecuritySerializer(security)
-                data = {'status':'success'}
+                data = {'status':'success','6_digits':db_token}
             # message = '<p><b>Use ' + db_token + ' as your verification code</b></p>'
             # subject = 'Password Change Request'
             # sendmail([user.email],message,message,subject)
@@ -217,6 +217,8 @@ class RequestChangePasswordView(APIView):
                     user.set_password(request.data.get('secret_answer'))
                     user.save()
                     data = {'success':True}
+                    security.last_token = ''
+                    security.save()
                 else:
                     data= {'invalid_verification_code':True}
                 return Response(data,status=status.HTTP_202_ACCEPTED)
@@ -229,55 +231,8 @@ class RequestChangePasswordView(APIView):
             return Response({'user':False},status=status.HTTP_404_NOT_FOUND)
 
 
-class CheckAccountNumber(APIView):
 
-    def post(self,request):
-        account_number = request.POST.copy().get('account_number')
-        account_bank = request.POST.copy().get('account_bank')
-        verification_response = Verification.verify_account(account_number=account_number,bank_code=account_bank)
-        sender = getsender(request)
-
-        if verification_response['status']:
-            if sender.is_admin:
-                partner = getpartner(request)
-                if verification_response['data']['account_name'] == partner.name:
-                    account_accepted= True
-
-                else:
-                    name_count =0
-                    for name in str(sender.first_name + ' ' + sender.last_name).split(' '):
-                        if name in str(verification_response['data']['account_name']).split(' '):
-                            account_accepted = True
-                            name_count += 1
-                    if name_count > 1:
-                        account_accepted = True
-                    else:
-                        account_accepted = False
-                        reason = 'Account name does not match business or your name'
-            else:
-                name_count =0
-                for name in str(sender.first_name + ' ' + sender.last_name).split(' '):
-                    if name in str(verification_response['data']['account_name']).split(' '):
-                        account_accepted = True
-                        name_count += 1
-                if name_count > 1:
-                    account_accepted = True
-                else:
-                    account_accepted = False
-                    reason = 'Account name does not match your name'   
-            data = {
-            'full_name':verification_response['data']['account_name'],'account_accepted':account_accepted,'reason':reason,
-                            }
-            return Response(data,status=status.HTTP_200_OK)
-        else:
-            data = {
-            'error':'Wrong account details',
-                            }
-            return Response(data,status=status.HTTP_404_NOT_FOUND)
-
-
-
-class AddHelp(APIView):
+class HelpView(APIView):
 
     queryset = Help.objects.all()
     serializer_class = HelpSerializer
@@ -435,7 +390,35 @@ class UserView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             serialized_data = UserSerializer(user)
-            login(request,user)
+            # login(request,user)
+            try:
+                user= User.objects.get(email=user.email)
+                try:
+                    security = Security.objects.get(user=user)
+                    security_serializer_class = SecuritySerializer(security)
+                    db_token = str(round(9999999 * random()))[0:6]
+                    print(db_token)
+                    security.last_token= make_password(db_token)
+                    security.save()
+                    data = {'status':'success','6_digits':db_token}
+                    
+                except ObjectDoesNotExist:
+                    security = Security.objects.create(user=user)
+                    security.refresh_from_db()
+                    db_token = str(round(9999999 * random()))[0:6]
+                    print(db_token)
+                    security.last_token= make_password(db_token)
+                    security.save()
+                    security_serializer_class = SecuritySerializer(security)
+                    data = {'status':'success','6_digits':db_token}
+                # message = '<p><b>Use ' + db_token + ' as your verification code</b></p>'
+                # subject = 'Password Change Request'
+                # sendmail([user.email],message,message,subject)
+                return Response(data,status=status.HTTP_202_ACCEPTED)
+            except ObjectDoesNotExist:
+                return Response({'user':False},status=status.HTTP_404_NOT_FOUND)
+
+
         return Response(serialized_data.data,status=status.HTTP_202_ACCEPTED)
 
 
@@ -790,3 +773,72 @@ class ReplyView(APIView):
         serializer_class = RepliesSerializer(reply)
         data = {'status':'success','reply':serializer_class.data}
         return Response(data,status=status.HTTP_202_ACCEPTED)
+
+
+class ConfirmEmail(APIView):
+
+    queryset = Security.objects.all()
+    serializer_class = SecuritySerializer
+    authentication_classes = ()
+    permission_classes = ()
+
+    # def get(self,request):
+    #     email =request.GET.get('email')
+    #     try:
+    #         user= User.objects.get(email=email)
+    #         try:
+    #             security = Security.objects.get(user=user)
+    #             security_serializer_class = SecuritySerializer(security)
+    #             db_token = str(round(9999999 * random()))[0:6]
+    #             print(db_token)
+    #             security.last_token= make_password(db_token)
+    #             security.save()
+    #             data = {'status':'success'}
+                
+    #         except ObjectDoesNotExist:
+    #             security = Security.objects.create(user=user)
+    #             security.refresh_from_db()
+    #             db_token = str(round(9999999 * random()))[0:6]
+    #             print(db_token)
+    #             security.last_token= make_password(db_token)
+    #             security.save()
+    #             security_serializer_class = SecuritySerializer(security)
+    #             data = {'status':'success'}
+    #         # message = '<p><b>Use ' + db_token + ' as your verification code</b></p>'
+    #         # subject = 'Password Change Request'
+    #         # sendmail([user.email],message,message,subject)
+    #         return Response(data,status=status.HTTP_202_ACCEPTED)
+    #     except ObjectDoesNotExist:
+    #         return Response({'user':False},status=status.HTTP_404_NOT_FOUND)
+
+
+    def post(self, request):
+        verification_code = request.data.get('last_token')
+        email = request.data.get('email')
+        # '154914'
+        try:
+            user= User.objects.get(email=email)
+            try:
+                security = Security.objects.get(user=user)
+                if check_password(verification_code,security.last_token):
+                    user.set_password(request.data.get('secret_answer'))
+                    user.save()
+                    data = {'success':True}
+                    security.last_toke = ''
+                    security.save()
+                    user.is_active = True
+                    security.email_confirmed = True
+                    user.save()
+                    security.save()
+                    login(request,user)
+                else:
+                    data= {'invalid_verification_code':True}
+                return Response(data,status=status.HTTP_202_ACCEPTED)
+
+            except ObjectDoesNotExist:
+                return Response({'invalid_request':True},status=status.HTTP_404_NOT_FOUND)
+
+
+        except ObjectDoesNotExist:
+            return Response({'user':False},status=status.HTTP_404_NOT_FOUND)
+
