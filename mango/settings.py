@@ -97,7 +97,6 @@ if ENV == 'dev':
     }
 
 elif ENV == 'prod':
-    HOST_URL=config('PROD_HOST_URL')
     DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
