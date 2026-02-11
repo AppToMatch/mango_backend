@@ -16,7 +16,7 @@ if sys.executable != INTERP: os.execl(INTERP, INTERP, *sys.argv)
 
 # The arguments to setdefault must match the configuration in the main() function in your manage.py file
 
-environ=os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sms.settings')
+environ=os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mango.settings')
 
 # Import the app variable from your Django project wsgi file
 
