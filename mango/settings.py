@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +21,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*^5s566d(7i5sz&ei^idi+y#6&mg!=sm2i*r!r-j#@13cl=9j7'
+SECRET_KEY = config('SECRET_KEY')
+DEBUG = bool(int(config('DEBUG')))
+ENV = config('ENV')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['mangobackend.herokuapp.com']
+ALLOWED_HOSTS = ['mango-api.brackins.net']
 
 REST_FRAMEWORK = {
 'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -87,11 +87,27 @@ WSGI_APPLICATION = 'mango.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {'default': 
-    {'ENGINE': 'django.db.backends.mysql',  'NAME': 'mango',  'USER': 'skupa',  'PASSWORD': '66585617Ca.',  'HOST': 'localhost',  'PORT': '3306',  }
-    
-}
+if ENV == 'dev':
 
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+elif ENV == 'prod':
+    HOST_URL=config('PROD_HOST_URL')
+    DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME':config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD':config('DB_PASSWORD'),
+        'HOST':'localhost',
+        'PORT':'3306'
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators

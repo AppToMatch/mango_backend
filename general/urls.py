@@ -1,8 +1,5 @@
-import imp
-from django.contrib import admin
+
 from django.urls import path
-from django.urls import include, re_path
-from app import urls, views as cviews
 from general import apiviews as gapiviews
 from rest_framework.routers import DefaultRouter
 
