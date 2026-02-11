@@ -4,13 +4,11 @@ django-allauth
 django-adminlte3
 django-countries
 django-excel
-django-heroku
 django-imagekit
 django-ipware
 django-mathfilters
 django-qr-code
 django-tinymce
-django-wkhtmltopdf
 dj-database-url
 gunicorn
 mysqlclient
