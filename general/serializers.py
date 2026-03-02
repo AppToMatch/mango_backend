@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from app import models as cmodels
-from django.contrib.auth.models import AnonymousUser, User
+from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from app.models import *
 
@@ -15,6 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
         email=validated_data['email'],
         )
         user.set_password(validated_data['password'])
+        user.username = validated_data['email']
         user.save()
         Token.objects.create(user=user)
         try:
