@@ -385,10 +385,29 @@ class UserView(APIView):
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()  # already returns the saved user
 
-            # Handle Security token
+        if serializer.is_valid():
+            email = serializer.validated_data.get("email")
+            username = serializer.validated_data.get("username", email)  # fallback to email if username not provided
+
+            # Check if email or username already exists
+            if User.objects.filter(email=email).exists():
+                return Response(
+                    {"status": "error", "message": "Email already in use."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if User.objects.filter(username=username).exists():
+                return Response(
+                    {"status": "error", "message": "Username already in use."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Save user
+            user = serializer.save()
+            user.username = username  # ensure username is saved correctly
+            user.save()
+
+            # Handle security token
             try:
                 security = Security.objects.get(user=user)
             except ObjectDoesNotExist:
@@ -398,12 +417,10 @@ class UserView(APIView):
             security.last_token = make_password(db_token)
             security.save()
 
-            data = {
-                "status": "success",
-                "6_digits": db_token
-            }
-
-            return Response(data, status=status.HTTP_202_ACCEPTED)
+            return Response(
+                {"status": "success", "6_digits": db_token},
+                status=status.HTTP_202_ACCEPTED
+            )
 
         return Response(
             {"status": "error", "errors": serializer.errors},

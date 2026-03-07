@@ -25,7 +25,7 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = bool(int(config('DEBUG')))
 ENV = config('ENV')
 
-ALLOWED_HOSTS = ['mango-api.brackins.net']
+ALLOWED_HOSTS = ['mango-api.brackins.net',"127.0.0.1"]
 
 REST_FRAMEWORK = {
 'DEFAULT_AUTHENTICATION_CLASSES': (
