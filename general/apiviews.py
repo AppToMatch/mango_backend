@@ -1,21 +1,19 @@
+from random import randint
+
 from django.core.paginator import Paginator,PageNotAnInteger,EmptyPage
 from rest_framework.views import APIView,status
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 from app.models import *
 from app.serializers import *
 from .serializers import *
-from django.contrib.auth.models import AnonymousUser, User
-from rest_framework import generics,viewsets,status
+from django.contrib.auth.models import User
+from rest_framework import viewsets,status
 from rest_framework.pagination import PageNumberPagination,LimitOffsetPagination
 from django.contrib.auth import login, authenticate,logout
 from .permissions import Check_API_KEY_Auth
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from paystackapi.paystack import Paystack
-from paystackapi.transaction import Transaction
-from paystackapi.verification import Verification
-from app.email_sender import sendmail
 paystack_secret_key = "sk_test_e6c40e9e83237dbb32096831467c6e6193a970cb"
 paystack = Paystack(secret_key=paystack_secret_key)
 
@@ -385,42 +383,32 @@ class UserView(APIView):
         return Response(data,status=status.HTTP_202_ACCEPTED)
 
 
-    def post(self,request):
+    def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            serialized_data = UserSerializer(user)
-            # login(request,user)
+            user = serializer.save()  # already returns the saved user
+
+            # Handle Security token
             try:
-                user= User.objects.get(email=user.email)
-                try:
-                    security = Security.objects.get(user=user)
-                    security_serializer_class = SecuritySerializer(security)
-                    db_token = str(round(9999999 * random()))[0:6]
-                    print(db_token)
-                    security.last_token= make_password(db_token)
-                    security.save()
-                    data = {'status':'success','6_digits':db_token}
-                    
-                except ObjectDoesNotExist:
-                    security = Security.objects.create(user=user)
-                    security.refresh_from_db()
-                    db_token = str(round(9999999 * random()))[0:6]
-                    print(db_token)
-                    security.last_token= make_password(db_token)
-                    security.save()
-                    security_serializer_class = SecuritySerializer(security)
-                    data = {'status':'success','6_digits':db_token}
-                # message = '<p><b>Use ' + db_token + ' as your verification code</b></p>'
-                # subject = 'Password Change Request'
-                # sendmail([user.email],message,message,subject)
-                return Response(data,status=status.HTTP_202_ACCEPTED)
+                security = Security.objects.get(user=user)
             except ObjectDoesNotExist:
-                return Response({'user':False},status=status.HTTP_404_NOT_FOUND)
+                security = Security.objects.create(user=user)
 
+            db_token = str(randint(100000, 999999))  # guaranteed 6-digit number
+            security.last_token = make_password(db_token)
+            security.save()
 
-        return Response(serialized_data.data,status=status.HTTP_202_ACCEPTED)
+            data = {
+                "status": "success",
+                "6_digits": db_token
+            }
 
+            return Response(data, status=status.HTTP_202_ACCEPTED)
+
+        return Response(
+            {"status": "error", "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 # class CreateUser(APIView):
 
