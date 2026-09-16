@@ -153,13 +153,15 @@ class LoginView(APIView):
     def post(self, request,):
         email = request.data.get("email")
         password = request.data.get("password")
-        user = authenticate(request,email=email, password=password)
         try:
             user = User.objects.get(email=email)
             if check_password(password,user.password):
                 login(request,user)
-                serialized_data = UserSerializer(user)
-                return Response(serialized_data.data,status=status.HTTP_202_ACCEPTED)
+                token, _ = Token.objects.get_or_create(user=user)
+                return Response(
+                    {'status': 'success', 'token': token.key, 'id': user.pk},
+                    status=status.HTTP_200_OK,
+                )
             else:
                 return Response({"error": "Wrong credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -389,37 +391,21 @@ class UserView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            serialized_data = UserSerializer(user)
-            # login(request,user)
-            try:
-                user= User.objects.get(email=user.email)
-                try:
-                    security = Security.objects.get(user=user)
-                    security_serializer_class = SecuritySerializer(security)
-                    db_token = str(round(9999999 * random()))[0:6]
-                    print(db_token)
-                    security.last_token= make_password(db_token)
-                    security.save()
-                    data = {'status':'success','6_digits':db_token}
-                    
-                except ObjectDoesNotExist:
-                    security = Security.objects.create(user=user)
-                    security.refresh_from_db()
-                    db_token = str(round(9999999 * random()))[0:6]
-                    print(db_token)
-                    security.last_token= make_password(db_token)
-                    security.save()
-                    security_serializer_class = SecuritySerializer(security)
-                    data = {'status':'success','6_digits':db_token}
-                # message = '<p><b>Use ' + db_token + ' as your verification code</b></p>'
-                # subject = 'Password Change Request'
-                # sendmail([user.email],message,message,subject)
-                return Response(data,status=status.HTTP_202_ACCEPTED)
-            except ObjectDoesNotExist:
-                return Response({'user':False},status=status.HTTP_404_NOT_FOUND)
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response(
+                {'status': 'success', 'token': token.key, 'id': user.pk},
+                status=status.HTTP_201_CREATED,
+            )
 
-
-        return Response(serialized_data.data,status=status.HTTP_202_ACCEPTED)
+        if 'email' in serializer.errors:
+            return Response(
+                {'email_already_exist': True, 'errors': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {'status': 'failed', 'errors': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 # class CreateUser(APIView):
@@ -841,4 +827,3 @@ class ConfirmEmail(APIView):
 
         except ObjectDoesNotExist:
             return Response({'user':False},status=status.HTTP_404_NOT_FOUND)
-
