@@ -30,6 +30,31 @@ class AuthenticationApiTests(TestCase):
 
         self.assertEqual(duplicate.status_code, 400)
         self.assertTrue(duplicate.data['email_already_exist'])
+
+    def test_profile_accepts_mobile_app_values(self):
+        signup = self.client.post(
+            '/user/create',
+            {'email': 'user@example.com', 'password': 'strong-password'},
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {signup.data['token']}")
+        profile = self.client.post(
+            '/user/profile/',
+            {
+                'first_name': 'Mango',
+                'last_name': 'Testperson',
+                'height': "6'2",
+                'gender': 'Male',
+                'occupation': 'Software developer',
+                'location': 'Apple Valley',
+                'date_of_birth': '1985-02-08',
+                'interested_in': 'Woman',
+            },
+        )
+
+        self.assertEqual(profile.status_code, 202)
+        self.assertEqual(profile.data['status'], 'success')
+        self.assertEqual(profile.data['profile']['gender'], 'M')
+        self.assertEqual(profile.data['profile']['interested_in'], 'female')
 from rest_framework.test import APITestCase
 from rest_framework.test import APIRequestFactory
 from django.contrib.auth import get_user_model
