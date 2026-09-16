@@ -5,14 +5,21 @@ from rest_framework.authtoken.models import Token
 from app.models import *
 
 class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(validators=[])
     class Meta:
         model = User
         fields = ('email', 'password',)
         extra_kwargs = {'password': {'write_only': True}}
 
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('A user with this email already exists.')
+        return value.lower()
+
     def create(self, validated_data):
         user = User(
         email=validated_data['email'],
+        username=validated_data['email'],
         )
         user.set_password(validated_data['password'])
         user.save()
