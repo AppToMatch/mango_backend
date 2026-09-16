@@ -628,6 +628,11 @@ class ProfileView(APIView):
         if serializer_class.is_valid():
             serializer_class.save()
             profile = serializer_class.instance
+        else:
+            return Response(
+                {'status': 'failed', 'errors': serializer_class.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         serializer_class = ProfilesSerializer(profile)
         data = {'status':'success','profile':serializer_class.data}
         return Response(data,status=status.HTTP_202_ACCEPTED)
