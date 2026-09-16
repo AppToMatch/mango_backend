@@ -66,6 +66,15 @@ class SecuritySerializer(serializers.ModelSerializer):
 
 
 class ProfilesSerializer(serializers.ModelSerializer):
+    gender = serializers.CharField(required=False, allow_blank=True)
+    interested_in = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_gender(self, value):
+        return {'Male': 'M', 'Female': 'F'}.get(value, value)
+
+    def validate_interested_in(self, value):
+        return {'Man': 'male', 'Woman': 'female'}.get(value, value.lower())
+
     class Meta:
         model = Profile
         fields = '__all__'
